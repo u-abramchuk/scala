@@ -1,6 +1,8 @@
 package scala.reflect
 package api
 
+import scala.language.experimental.macros
+
 trait StandardLiftables { self: Universe =>
   import build.{SyntacticTuple, ScalaDot}
 
@@ -10,6 +12,8 @@ trait StandardLiftables { self: Universe =>
     private def callScala(names: Name*)(args: List[Tree])    = Apply(selectScala(names: _*), args)
     private def callCollection(name: Name)(args: List[Tree]) = callScala(nme.collection, nme.immutable, name)(args)
     private def liftAsLiteral[T]: Liftable[T]                = Liftable { v => Literal(Constant(v)) }
+
+    implicit def materializeLiftable[T]: Liftable[T] = macro LiftableCaseClass.materializeLiftableImpl[T]
 
     implicit def liftByte[T <: Byte]: Liftable[T]     = liftAsLiteral[T]
     implicit def liftShort[T <: Short]: Liftable[T]   = liftAsLiteral[T]
@@ -226,5 +230,27 @@ trait StandardLiftables { self: Universe =>
     val Symbol     = TermName("Symbol")
     val Vector     = TermName("Vector")
     val util       = TermName("util")
+  }
+}
+
+object LiftableCaseClass {
+  import scala.reflect.macros._
+  
+  def materializeLiftableImpl[T: c.WeakTypeTag](c: WhiteboxContext): c.Tree = {
+    import c.universe._
+
+    val tpe = weakTypeOf[T]
+    val tpeName = tpe.typeSymbol.name
+    val isCaseClass = tpe.typeSymbol.asClass.isCaseClass
+
+    if (!isCaseClass) c.abort(c.enclosingPosition, s"$tpe is not a case class")
+    val declarations = tpe.declarations
+    val ctor = declarations.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
+    val params = ctor.paramss.head
+    q"""
+      new Liftable[$tpe] {
+        def apply(value: $tpe) = Apply(Ident(TermName($tpeName)), List())
+      }
+    """
   }
 }
