@@ -239,16 +239,21 @@ object LiftableCaseClass {
   def materializeLiftableImpl[T: c.WeakTypeTag](c: WhiteboxContext): c.Tree = {
     import c.universe._
 
+    val Expr(liftable) = c.prefix
+
     val tpe = weakTypeOf[T]
     val tpeName = tpe.typeSymbol.name
     val isCaseClass = tpe.typeSymbol.asClass.isCaseClass
 
-    if (!isCaseClass) c.abort(c.enclosingPosition, s"$tpe is not a case class")
+    if (!isCaseClass) {
+      c.abort(c.enclosingPosition, s"$tpe is not a case class")
+    }
+
     val declarations = tpe.declarations
     val ctor = declarations.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
     val params = ctor.paramss.head
     q"""
-      new Liftable[$tpe] {
+      new $liftable[$tpe] {
         def apply(value: $tpe) = Apply(Ident(TermName($tpeName)), List())
       }
     """
