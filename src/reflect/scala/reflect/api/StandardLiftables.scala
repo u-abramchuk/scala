@@ -238,11 +238,14 @@ object LiftableCaseClass {
   
   def materializeLiftableImpl[T: c.WeakTypeTag](c: WhiteboxContext): c.Tree = {
     import c.universe._
+    import Flag._
 
     val Expr(liftable) = c.prefix
 
     val tpe = weakTypeOf[T]
     val tpeName = tpe.typeSymbol.name
+    val TypeName(name) = tpeName
+    val typeModuleSymbol = c.mirror.staticModule(tpe.typeSymbol.fullName)
     val isCaseClass = tpe.typeSymbol.asClass.isCaseClass
 
     if (!isCaseClass) {
@@ -252,10 +255,69 @@ object LiftableCaseClass {
     val declarations = tpe.declarations
     val ctor = declarations.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
     val params = ctor.paramss.head
+
+    val newObjectName = TermName(name + "Liftable")
     q"""
-      new $liftable[$tpe] {
-        def apply(value: $tpe) = Apply(Ident(TermName($tpeName)), List())
-      }
+    implicit object $newObjectName extends $liftable[$typeModuleSymbol] {
+      def apply(v: $typeModuleSymbol) = Apply($typeModuleSymbol, List())
+    }
     """
+
+
+//     val res = ModuleDef(
+//       Modifiers(IMPLICIT), 
+//       TermName(name + Liftable), 
+//       Template(
+//         List(
+//           AppliedTypeTree(
+//             liftable, 
+//             List(Ident(typeModuleSymbol)))), 
+//         noSelfType, 
+//         List(
+//           DefDef(
+//             Modifiers(), 
+//             nme.CONSTRUCTOR, 
+//             List(), 
+//             List(List()), 
+//             TypeTree(), 
+//             Block(
+//               List(pendingSuperCall), 
+//               Literal(Constant(())))), 
+//           DefDef(
+//             Modifiers(), 
+//             TermName("apply"), 
+//             List(), 
+//             List(
+//               List(
+//                 ValDef(
+//                   Modifiers(PARAM), 
+//                   TermName("v"), 
+//                   Ident(typeModuleSymbol), 
+//                   EmptyTree))), 
+//             TypeTree(), 
+//             Apply(
+//               Ident(TermName("Apply")), 
+//               List(
+//                 Apply(
+//                   Ident(TermName("Ident")), 
+//                   List(
+//                     Apply(
+//                       Ident(TermName("TermName")), 
+//                       List(
+//                         Literal(Constant(name)))))), 
+//                 Apply(
+//                   Ident(TermName("List")), 
+//                   List(
+//                     Apply(
+//                       Ident(TermName("Literal")), 
+//                       List(
+//                         Apply(
+//                           Ident(TermName("Constant")), 
+//                           List(
+//                             Select(
+//                               Ident(TermName("v")), 
+//                               TermName("num"))))))))))))))
+// println(res)
+// res
   }
 }
