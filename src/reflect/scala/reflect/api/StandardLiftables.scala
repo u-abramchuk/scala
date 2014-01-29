@@ -254,9 +254,11 @@ object LiftableCaseClass {
 
     val declarations = tpe.declarations
     val ctor = declarations.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
-    val params = ctor.paramss.head
+    val params = ctor.paramss.head.map(p => q"$p")
+    //need to lift each param once more
+    // params.foreach(p => println(showRaw(p)))
     val newObjectName = TermName(tpeName + "Liftable")
-    
+
     q"""
     {
       implicit object $newObjectName extends $liftable[$typeModuleSymbol] {
