@@ -255,8 +255,8 @@ object LiftableCaseClass {
     val declarations = tpe.declarations
     val ctor = declarations.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
     val params = ctor.paramss.head
-
     val newObjectName = TermName(tpeName + "Liftable")
+    
     q"""
     {
       implicit object $newObjectName extends $liftable[$typeModuleSymbol] {
@@ -267,59 +267,48 @@ object LiftableCaseClass {
     """
 
 
-//     val res = ModuleDef(
-//       Modifiers(IMPLICIT), 
-//       TermName(name + Liftable), 
-//       Template(
-//         List(
-//           AppliedTypeTree(
-//             liftable, 
-//             List(Ident(typeModuleSymbol)))), 
-//         noSelfType, 
-//         List(
-//           DefDef(
-//             Modifiers(), 
-//             nme.CONSTRUCTOR, 
-//             List(), 
-//             List(List()), 
-//             TypeTree(), 
-//             Block(
-//               List(pendingSuperCall), 
-//               Literal(Constant(())))), 
-//           DefDef(
-//             Modifiers(), 
-//             TermName("apply"), 
-//             List(), 
+//     val res = 
+//     Block(
+//       List(
+//         ModuleDef(
+//           Modifiers(IMPLICIT), 
+//           TermName("NewObject"), 
+//           Template(
 //             List(
-//               List(
-//                 ValDef(
-//                   Modifiers(PARAM), 
-//                   TermName("v"), 
-//                   Ident(typeModuleSymbol), 
-//                   EmptyTree))), 
-//             TypeTree(), 
-//             Apply(
-//               Ident(TermName("Apply")), 
-//               List(
+//               AppliedTypeTree(
+//                 Ident(TypeName("Liftable")), 
+//                 List(Ident(TypeName("Int"))))), 
+//             noSelfType, 
+//             List(
+//               DefDef(
+//                 Modifiers(), 
+//                 nme.CONSTRUCTOR, 
+//                 List(), 
+//                 List(List()), 
+//                 TypeTree(), 
+//                 Block(
+//                   List(pendingSuperCall), 
+//                   Literal(Constant(())))), 
+//               DefDef(
+//                 Modifiers(), 
+//                 TermName("apply"), 
+//                 List(), 
+//                 List(
+//                   List(
+//                     ValDef(
+//                       Modifiers(PARAM), 
+//                       TermName("v"), 
+//                       Ident(TypeName("Int")), 
+//                       EmptyTree))), 
+//                 TypeTree(), 
 //                 Apply(
-//                   Ident(TermName("Ident")), 
+//                   Ident(TermName("Literal")), 
 //                   List(
 //                     Apply(
-//                       Ident(TermName("TermName")), 
+//                       Ident(TermName("Constant")), 
 //                       List(
-//                         Literal(Constant(name)))))), 
-//                 Apply(
-//                   Ident(TermName("List")), 
-//                   List(
-//                     Apply(
-//                       Ident(TermName("Literal")), 
-//                       List(
-//                         Apply(
-//                           Ident(TermName("Constant")), 
-//                           List(
-//                             Select(
-//                               Ident(TermName("v")), 
-//                               TermName("num"))))))))))))))
+//                         Ident(TermName("v"))))))))))), 
+//       Ident(TermName("NewObject")))
 // println(res)
 // res
   }
