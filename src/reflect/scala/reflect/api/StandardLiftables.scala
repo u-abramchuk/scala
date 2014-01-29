@@ -256,10 +256,13 @@ object LiftableCaseClass {
     val ctor = declarations.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
     val params = ctor.paramss.head
 
-    val newObjectName = TermName(name + "Liftable")
+    val newObjectName = TermName(tpeName + "Liftable")
     q"""
-    implicit object $newObjectName extends $liftable[$typeModuleSymbol] {
-      def apply(v: $typeModuleSymbol) = Apply($typeModuleSymbol, List())
+    {
+      implicit object $newObjectName extends $liftable[$typeModuleSymbol] {
+        def apply(v: $typeModuleSymbol) = Apply($typeModuleSymbol, List())
+      }
+      $newObjectName
     }
     """
 
